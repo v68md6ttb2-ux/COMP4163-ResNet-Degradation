@@ -1,0 +1,23 @@
+.venv/
+data/
+runs/
+figures/
+reports/
+__pycache__/
+*.pyc
+*.pth
+
+# LaTeX build products
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+
+# course materials (not ours; keep them out of the public repo)
+1512.03385v1.pdf
+handout.pdf
+resnet-degradation-card.pdf
+Week\ 9\ Writing\ About\ Infographics\ Lessons.pdf
+build/
+checks.json

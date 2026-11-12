@@ -1,0 +1,218 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{amsmath}
+% Manual page layout (geometry.sty is not installed in this MiKTeX tree)
+\setlength{\textwidth}{16.8cm}
+\setlength{\textheight}{23.8cm}
+\setlength{\oddsidemargin}{-0.44cm}
+\setlength{\evensidemargin}{-0.44cm}
+\setlength{\topmargin}{-0.7cm}
+\setlength{\headheight}{0pt}
+\setlength{\headsep}{0.3cm}
+\setlength{\footskip}{0.8cm}
+\setlength{\belowcaptionskip}{7pt}
+\setlength{\itemsep}{2pt}
+\setlength{\topsep}{2pt}
+\setlength{\leftmargini}{1.5em}
+\newcommand{\paper}{He et al.\ (2016)}
+\newcommand{\pp}{percentage points}
+\pagestyle{plain}
+
+\begin{document}
+
+\begin{center}
+{\Large\bfseries COMP4163 Course Project --- Milestone 1: Reading}\\[4pt]
+{\large Deep residual learning lets deeper networks train better}\\[6pt]
+Team: \underline{\hspace{4cm}}\\[3pt]
+Members: \underline{\hspace{11cm}}\\[3pt]
+Date: 6 November 2026
+\end{center}
+
+\vspace{-2pt}
+\noindent\rule{\textwidth}{0.4pt}
+
+\section{Result to reproduce and the paper's evidence base}
+
+We reproduce the CIFAR-10 degradation result of \paper{}: Figure~6 (left and middle) and the ResNet-20 and ResNet-56 rows of Table~6. Concretely, we train four networks---plain-20, plain-56, ResNet-20 and ResNet-56---with three seeds each (12 runs), and compare (i) the training and test error curves against Figure~6, and (ii) the test errors at 64{,}000 iterations against Table~6 (8.75\% and 6.97\%).
+
+The paper's CIFAR-10 evidence is thinner than its presentation suggests: Figure~6 shows one curve per depth and the paper does not state the number of runs, while the Table~6 entries for the depths we replicate are single runs. Only ResNet-110 is trained five times, and the paper reports its best value (6.43\%) together with the mean and standard deviation (6.61$\pm$0.16). The paper reports no seed spread for plain-20/56 or for ResNet-20/56, so our three seeds per network add information the original evidence does not contain. Table~\ref{tab:claims} lists the paper's CIFAR-10 claims and the number of runs behind each.
+
+{\footnotesize
+\begin{longtable}{@{}p{4.5cm}p{2.9cm}p{3.5cm}p{4.3cm}@{}}
+\caption{The paper's CIFAR-10 claims, their evidence, and the number of training runs behind the evidence. ``Not stated'' means the paper shows one curve/model but does not say how many runs it performed.}
+\label{tab:claims}\\
+\toprule
+\textbf{Claim} & \textbf{Network depths} & \textbf{Evidence} & \textbf{Training runs behind it}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Claim} & \textbf{Network depths} & \textbf{Evidence} & \textbf{Training runs behind it}\\
+\midrule
+\endhead
+Plain nets degrade with depth: the 56-layer plain net has higher training and test error than the 20-layer one; error rises with depth; plain-110 exceeds 60\% and is not plotted.
+& plain-20, 32, 44, 56, 110
+& Fig.~1 (p.~1); Fig.~6 left and caption (p.~8)
+& One curve per depth; number of runs not stated (so one run per plotted curve). Plain-110: one run.\\
+Residual nets reverse the trend: deeper ResNets have lower training and test error (20$\to$110).
+& ResNet-20, 32, 44, 56, 110
+& Fig.~6 middle (p.~8); Table~6 (p.~7); Sec.~4.2
+& One run each for 20/32/44/56; five runs for 110; one for 1202.\\
+CIFAR-10 test errors: 8.75, 7.51, 7.17, 6.97, 6.43, 7.93 for 20/32/44/56/110/1202. ResNet-110 best 6.43\% (mean 6.61$\pm$0.16).
+& ResNet-20 to 1202
+& Table~6 (p.~7)
+& One run each except ResNet-110 (five runs).\\
+The 110-layer ResNet needs a warm-up: initial lr 0.1 is too large to start converging; lr 0.01 until training error $<80\%$ (about 400 iterations), then 0.1.
+& ResNet-110
+& Sec.~4.2 (p.~7); footnote~5; Fig.~6 middle
+& One run.\\
+The 1202-layer ResNet reaches $<0.1\%$ training error but 7.93\% test error, worse than 110 despite similar training error; attributed to overfitting; 19.4M parameters.
+& ResNet-1202
+& Sec.~4.2 (p.~8); Fig.~6 right; Table~6
+& One run.\\
+Residual layer responses are smaller than those of plain counterparts, and shrink with depth.
+& ResNet-20/56/110 vs.\ plain-20/56
+& Fig.~7 (p.~8)
+& One trained model per depth; number of runs not stated.\\
+Option~A shortcuts add no parameters: ResNet and plain have identical depth, width and parameter count at a given depth (0.27M, 0.46M, 0.66M, 0.85M, 1.7M and 19.4M for the six depths). ResNet-110 has fewer parameters than FitNet and Highway.
+& 20--1202 (six depths)
+& Sec.~3.2 (p.~3); Sec.~4.2; Table~6
+& Architecture/parameter facts, not training evidence; comparison rows are other authors' reported results.\\
+\bottomrule
+\end{longtable}
+}
+
+\section{The paper's CIFAR-10 recipe, open details, and our choices}
+
+Table~\ref{tab:recipe} extracts the complete recipe from Section~4.2 (pp.~7--8) and the architecture table on p.~7. We mark every detail the paper leaves open and state our choice. One split detail needs care: the paper does mention a 45{,}000/5{,}000 train/validation split, saying the 64k stopping point ``is determined on a 45k/5k train/val split'' (p.~8), but it does not say whether the networks behind Table~6 were themselves trained on 45{,}000 or 50{,}000 images; the topic card says they were ``likely trained on all 50,000''. Three protocol elements come from the card rather than the paper: the 351-iteration epoch, the per-epoch evaluation, and the three seeds. We follow the card on the split and on those three.
+
+\begin{longtable}{@{}p{2.4cm}p{4.3cm}p{2.6cm}p{6.0cm}@{}}
+\caption{Paper's CIFAR-10 recipe and our choices. ``Open'' marks details the paper does not specify.}\label{tab:recipe}\\
+\toprule
+\textbf{Component} & \textbf{Paper (Sec.~4.2)} & \textbf{Open?} & \textbf{Our choice}\\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Component} & \textbf{Paper} & \textbf{Open?} & \textbf{Our choice}\\
+\midrule
+\endhead
+Data & CIFAR-10~\cite{krizhevsky}: 50k training, 10k test images, 10 classes, $32\times32$; the 64k schedule is ``determined on a 45k/5k train/val split''. & Which 5k; 45k or 50k trained & Follow the card: concatenate the five training batches in order, hold out the last 5{,}000 as validation, train on the first 45{,}000.\\
+Input normalisation & ``per-pixel mean subtracted''; no standard-deviation division mentioned. & Which images; order vs. augmentation & Compute the per-pixel mean over the 45{,}000 training images only; subtract it after cropping/flipping (zero-valued padding therefore becomes $-$mean). No std division.\\
+Augmentation & Pad 4 pixels on each side; random $32\times32$ crop from the padded image or its horizontal flip. Test on the single original $32\times32$ image. & Padding value; crop/flip order; test averaging & Zero padding, then random crop, then random horizontal flip, independently per example. Single-view test, no averaging.\\
+Architecture & $6n+2$ weighted layers: one $3\times3$ conv (16 filters); three stages of $2n$ $3\times3$ convs on $32/16/8$ feature maps with $16/32/64$ filters; stride-2 conv at the start of stages 2--3; global average pooling; 10-way fully connected; softmax. & Conv padding; conv1 BN/ReLU; FC/conv biases & Conv padding 1; conv1 $\to$ BN $\to$ ReLU; FC bias kept; conv biases omitted (as in the paper's notation, and redundant before BN).\\
+Shortcuts & Connected across each pair of $3\times3$ convs ($3n$ shortcuts); identity in all CIFAR-10 cases (option~A); zero padding when dimensions increase. & Exact placement; stride-2 zero padding & Identity on every pair of convs; at stage transitions, subsample the identity by $2$ ($x_{:,:,::2,::2}$) and zero-pad the extra channels. No parameters.\\
+Batch norm & After each convolution, before activation. & Affine; momentum; $\varepsilon$; after addition? & Affine; PyTorch defaults (momentum 0.1, $\varepsilon=10^{-5}$); ReLU after the addition, no BN after the addition (paper Fig.~2).\\
+Dropout & ``We do not use dropout'' (Sec.~4.2). & --- & None; the networks have no dropout layer.\\
+Initialisation & ``Weight initialization in [13]'' (He et al., 2015). & Fan-in/out; normal/uniform; FC init & Kaiming normal, fan-in, ReLU gain (the MSRA initialisation of [13]); FC left at PyTorch default (650 parameters; negligible).\\
+Optimiser & SGD, momentum 0.9, weight decay 0.0001. & Nesterov; dampening; wd on BN/bias? & Plain momentum SGD, no Nesterov, default dampening; weight decay on all parameters.\\
+Batch size & 128, ``on two GPUs''. & Total or per GPU & 128 total (the card's 351-iteration epoch confirms this).\\
+Schedule & lr 0.1, divided by 10 at 32k and 48k iterations, stop at 64k. & Step vs.\ exponential; iteration indexing & Step decay at 32{,}000 and 48{,}000 iterations; 64{,}000 total.\\
+Warm-up & None for 20/56; 110 uses lr 0.01 until training error $<80\%$ ($\sim$400 iterations), then 0.1. & Exact trigger and duration & Not used for 20/56 (the networks we replicate); for 110 we use 400 iterations at 0.01.\\
+Epochs and evaluation & The paper counts iterations, not epochs. & Epoch length; evaluation timing & 45{,}000/128 = 351.56, so drop the last partial batch: 351 iterations per epoch. Evaluate after every epoch and at 64{,}000.\\
+Metrics & Test error on the single view; training error curves in Fig.~6. & How train error measured; top-1/5 & Top-1 error. Evaluation-mode errors on unaugmented 45k train, 5k val and 10k test; also a running training error on the augmented training batches, in training mode.\\
+Precision & Not stated. & Mixed precision? & The card permits it: autocast float16 + gradient scaler in every training run; evaluation in float32. We say so in the report.\\
+Seeds and runs & One run per depth (five for 110). & Seeds; number of runs & Seeds 0, 1, 2 for every network (12 runs); a diverged run is recorded and not replaced.\\
+\bottomrule
+\end{longtable}
+
+\section{The paper's and Prince's explanations of degradation}
+
+\subsection{The paper's explanation}
+
+The paper argues that degradation is an \emph{optimisation} failure, not overfitting, because the deeper model's \emph{training} error is also higher (Sec.~1, p.~1). Its central argument is by construction: the deeper model contains the shallower one plus identity-mapping layers, so a solution at least as good exists, yet the solver cannot find it ``in feasible time'' (p.~1). Section~3.1 (p.~3) adds that the difficulty is specifically in approximating identity mappings with stacks of nonlinear layers; if identity were optimal, driving a residual branch to zero is easier than learning an identity from scratch. The reformulation is therefore described as \emph{preconditioning} the problem. Section~4.1 (p.~5, stated for ImageNet but presented as the general explanation) rules out vanishing gradients: BN keeps forward variances non-zero and backward gradient norms healthy, and the 34-layer plain net still reaches competitive accuracy. The paper's stated conjecture is that deep plain nets have \emph{exponentially low convergence rates}; it explicitly leaves the reason for future study.
+
+\subsection{Prince's explanation (Understanding Deep Learning, \S11.1.1)}
+
+Prince frames degradation the same way at the level of symptoms---training error, not just test error, gets worse with depth, so it is not overfitting---but gives a different mechanistic conjecture. At initialisation, the loss gradient changes unpredictably when parameters in early layers change. Good initialisation removes exploding/vanishing \emph{magnitudes}, but the derivative is a local, infinitesimal quantity while SGD takes \emph{finite} steps; any reasonable step size may land at a point whose gradient is unrelated to the previous one. The loss surface is therefore pictured as ``an enormous range of tiny mountains'' rather than one smooth structure. The supporting evidence is the \emph{autocorrelation of gradients}: nearby gradients are correlated in shallow nets and decorrelate rapidly with depth, the ``shattered gradients'' phenomenon (Prince, Fig.~11.3, citing Balduzzi et al., 2017). Prince presents this as a conjecture, not a settled theory.
+
+\subsection{How the two explanations differ}
+
+Table~\ref{tab:explanations} summarises the comparison. The main differences are: (i) the paper locates the problem in the difficulty of representing/optimising identity mappings and in convergence rate, while Prince locates it in the geometry of the loss surface and the mismatch between local derivatives and finite steps; (ii) the paper's diagnostic is the train/test error curve plus healthy gradient \emph{norms} (which rules out vanishing gradients), while Prince's diagnostic is gradient \emph{correlation}, a property that can be pathological even when gradient norms are healthy; and (iii) both see residual connections as the remedy, but the paper describes them as making identity easy (preconditioning), whereas Prince describes them as shortening gradient paths and behaving like an ensemble of shallower networks, which reduces shattering. The two accounts are compatible: the paper says why the residual \emph{parameterisation} helps, Prince suggests why depth hurts even after good initialisation.
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{The paper's and Prince's accounts of degradation.}
+\label{tab:explanations}
+\begin{tabular}{@{}p{2.7cm}p{6.2cm}p{6.2cm}@{}}
+\toprule
+ & \textbf{\paper} & \textbf{Prince, \S11.1.1}\\
+\midrule
+Symptom & Higher \emph{training} and test error at greater depth; not overfitting. & Same; explicitly distinguished from overfitting.\\
+Proposed mechanism & Solver cannot find the identity-plus-shallow solution; deep plain nets have exponentially low convergence rates; approximating identity with nonlinear layers is hard. & Gradients change unpredictably with early-layer parameters; finite steps land where gradients are unrelated; ``shattered gradients''.\\
+Evidence & Train/test curves (Figs.~1, 6); BN keeps gradient norms healthy (Sec.~4.1). & Gradient autocorrelation (Fig.~11.3); loss-surface picture; cites Balduzzi et al.\ (2017).\\
+Role of residual connections & Make identity easy: push the residual to zero; preconditioning. & Shorten gradient paths; implicit ensemble of shallower nets; less shattering.\\
+Status & Conjecture; ``will be studied in the future''. & Conjecture; not fully understood.\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Read-offs from Figure 6 at 64{,}000 iterations}
+
+We digitised the vector paths of Figure~6, mapped the axes linearly (top $=20\%$, bottom $=0\%$; $x=0$ to $64$k), and read each curve at its final point. The method is more precise than visual reading: the ResNet values agree with Table~6 to within 0.03 \pp{} (ResNet-20: 8.78 vs.\ 8.75; ResNet-56: 7.00 vs.\ 6.97), which validates the axis mapping. We estimate the reading precision at about $\pm0.1$ \pp{}, set by line thickness (0.33--0.84\,pt) and by the fact that the plotted curves are sampled and connected; differences below roughly 0.2 \pp{} should not be interpreted.
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Read-offs from Figure~6 at 64{,}000 iterations. ``Train'' is the dashed curve, ``test'' the bold curve.}
+\label{tab:readoffs}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\textbf{Network} & \textbf{Train error (Fig.~6)} & \textbf{Test error (Fig.~6)} & \textbf{Test error (Table~6)} & \textbf{Difference}\\
+\midrule
+plain-20  & 1.5\% & 9.7\%  & ---   & ---\\
+plain-56  & 5.9\% & 13.3\% & ---   & ---\\
+ResNet-20 & 0.8\% & 8.8\%  & 8.75\% & $+0.03$\\
+ResNet-56 & 0.1\% & 7.0\%  & 6.97\% & $+0.03$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Two read-off differences are useful for the report. First, plain-56 minus plain-20 is $+4.5$ \pp{} in training error (5.9 vs.\ 1.5) and $+3.6$ \pp{} in test error (13.3 vs.\ 9.7), both clear of the reading precision. Second, ResNet-20 minus ResNet-56 in test error is $1.78$ \pp{} (8.78 $-$ 7.00), exactly the paper's 1.78 \pp{} (8.75 $-$ 6.97). A caveat on the first: at the endpoint, plain-32's training curve (1.2\%) is slightly \emph{below} plain-20's (1.5\%), so the monotone ``higher training error with depth'' statement is clean only from 20 to 44/56; the test error, however, rises monotonically from 20 to 56 (9.7, 10.1, 11.5, 13.3). With one run per depth, a 0.3 \pp{} training difference is within plausible run-to-run noise. Appendix~A gives the read-offs for the depths we do not train.
+
+\section{Extension question and pre-registered hypothesis}
+
+\textbf{Question (Option~A).} Does the degradation remain when the initial learning rate is tuned separately for each depth? The paper uses one schedule---initial lr 0.1, divided by 10 at 32k and 48k---for every depth, and gives a warm-up only to the 110-layer net. We tune plain-20 and plain-56 separately on the grid $\{0.01, 0.03, 0.1, 0.3, 0.5\}$, keeping the paper's two divisions by 10, using the full 64k schedule and no warm-up. We select the rate with the lowest \emph{evaluation-mode training error at the last iteration} (the card deliberately chooses training, not validation, error, because the question is about optimisation), then train three seeds at each selected rate. We report the validation error of every tuning run, but do not use it for selection.
+
+\textbf{Hypothesis.} We state two predictions before running the grid.
+\begin{enumerate}
+\item[(H1)] The selected initial rate will be \emph{lower} for plain-56 than for plain-20. If degradation is driven by depth-dependent conditioning, the 56-layer net should prefer a smaller initial step.
+\item[(H2)] Even at each depth's own selected rate, plain-56 will still have a higher evaluation-mode training error at 64{,}000 than plain-20, by more than the larger of the two networks' three-seed spreads---i.e., the degradation is not merely a learning-rate-scale artifact.
+\end{enumerate}
+H2 is the primary test, following the card's decision rule: a difference counts as real only if it exceeds the larger spread. If H2 is false (the gap falls within the spread), the data would be consistent with an LR-scale explanation; if H1 is false, the depth-dependent-conditioning story is not supported. Either outcome is informative, and we will report it as such.
+
+\textbf{Planned runs.} Four new tuning runs per depth at the four remaining rates (the 0.1 runs double as the replication's first seed, seed~0), i.e.\ 8 new runs; if 0.01 wins we extend once to 0.003 (2 runs). Then three seeds per depth at the selected rate (up to 6 runs); if 0.1 wins these coincide with the replication seeds. The 12-run replication (four networks $\times$ three seeds) is separate.
+
+\section*{AI use declaration}
+We used Claude Code (Anthropic) as a reading and coding assistant: it helped extract the recipe, digitise Figure~6 from the PDF's vector paths, and draft this milestone. Every number and claim was checked against the paper by the team; all code and experiments are run and understood by the team, and every member can explain every line and every plot, as the course requires.
+
+\begin{thebibliography}{9}
+\bibitem{he2016} K.~He, X.~Zhang, S.~Ren and J.~Sun. Deep residual learning for image recognition. \emph{CVPR}, 2016. arXiv:1512.03385v1.
+\bibitem{prince} S.~J.~D.~Prince. \emph{Understanding Deep Learning}. MIT Press, 2023. \S11.1--11.4, pp.~186--195.
+\bibitem{he2015} K.~He, X.~Zhang, S.~Ren and J.~Sun. Delving deep into rectifiers: surpassing human-level performance on ImageNet classification. \emph{ICCV}, 2015.
+\bibitem{balduzzi} D.~Balduzzi, M.~Frean, L.~Leary, J.~P.~Lewis, K.~W.~Ma and H.~W.~McWilliams. The shattered gradients problem: if resnets are the answer, then what is the question? \emph{ICML}, 2017.
+\bibitem{krizhevsky} A.~Krizhevsky. Learning multiple layers of features from tiny images. Technical report, University of Toronto, 2009.
+\end{thebibliography}
+
+\appendix
+\section{Additional Figure~6 read-offs (depths not trained)}
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Network} & \textbf{Train (read)} & \textbf{Test (read)} & \textbf{Table~6 / note}\\
+\midrule
+plain-32  & 1.2\% & 10.1\% & ---\\
+plain-44  & 3.2\% & 11.5\% & ---\\
+plain-110 & --- & --- & $>60\%$, not plotted (caption)\\
+ResNet-32 & 0.3\% & 7.5\%  & 7.51\%\\
+ResNet-44 & 0.1\% & 7.2\%  & 7.17\%\\
+ResNet-110 & 0.1\% & 6.6\% & 6.43\% best of 5 (mean 6.61$\pm$0.16)\\
+ResNet-1202 & 0.0\% & 7.9\% & 7.93\%\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\end{document}
