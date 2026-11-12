@@ -1,11 +1,11 @@
 .venv/
-data/
 runs/
-figures/
-reports/
 __pycache__/
 *.pyc
 *.pth
+
+# CIFAR-10 download (170 MB, exceeds GitHub's per-file limit; fetched by src/data.py)
+data/
 
 # LaTeX build products
 *.aux
@@ -13,11 +13,3 @@ __pycache__/
 *.out
 *.toc
 *.synctex.gz
-
-# course materials (not ours; keep them out of the public repo)
-1512.03385v1.pdf
-handout.pdf
-resnet-degradation-card.pdf
-Week\ 9\ Writing\ About\ Infographics\ Lessons.pdf
-build/
-checks.json
