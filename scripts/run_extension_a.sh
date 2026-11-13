@@ -31,7 +31,13 @@ for depth in 20 56; do
   done
 done
 
-sort -k2,2nr "$queue" | xargs -P "$JOBS" -L 1 bash -c \
+# Same lane split as run_core.sh: a 56-layer run fills the GPU by itself, a
+# 20-layer run leaves it half idle, so pair them instead of pairing like with
+# like.
+awk '$2==56' "$queue" > build/queue_ext_long.txt
+awk '$2==20' "$queue" > build/queue_ext_short.txt
+paste -d'\n' build/queue_ext_long.txt build/queue_ext_short.txt | grep -v '^$' \
+  | xargs -P "$JOBS" -L 1 bash -c \
   'PYTHONPATH=. "$0" -m src.train --arch "$1" --depth "$2" --seed "$3" --out "$4" --lr "$5"' "$PY"
 
 # Selection: lowest evaluation-mode training error at the last iteration.
