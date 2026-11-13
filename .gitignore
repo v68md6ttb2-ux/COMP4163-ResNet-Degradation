@@ -7,6 +7,9 @@ __pycache__/
 # CIFAR-10 download (170 MB, exceeds GitHub's per-file limit; fetched by src/data.py)
 data/
 
+# Scratch: download parts and run queues
+build/
+
 # LaTeX build products
 *.aux
 *.log

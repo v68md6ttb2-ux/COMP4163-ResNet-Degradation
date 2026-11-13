@@ -85,6 +85,9 @@ def main() -> None:
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(args.seed)
     device = torch.device(args.device)
+    if args.amp and device.type != "cuda":
+        print("float16 autocast needs CUDA; running in float32", flush=True)
+        args.amp = False
     epoch_iters = NUM_TRAIN // args.batch_size
 
     data = CIFAR10Data(root=args.data_dir, download=not args.no_download, device=device)
