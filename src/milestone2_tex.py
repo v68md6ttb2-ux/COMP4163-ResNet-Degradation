@@ -42,9 +42,14 @@ PREAMBLE = r"""\documentclass[11pt,a4paper]{article}
 HEAD = r"""
 \begin{center}
 {\Large\bfseries COMP4163 Course Project --- Milestone 2: First Run}\\[4pt]
-{\large A ResNet-20 on CIFAR-10, 64{,}000 iterations, against Table~6}\\[6pt]
-Team: \underline{\hspace{4cm}}\\[3pt]
-Members: \underline{\hspace{11cm}}\\[3pt]
+{\large A ResNet-20 on CIFAR-10, 64{,}000 iterations, against Table~6}\\[8pt]
+\begin{tabular}{@{}rl@{}}
+Team: & group 11 \\
+Members: & Chen Letian 2330026013 \\
+         & Zhang Yiyang 2430024331 \\
+         & Liu Chuanliang 2330013021 \\
+         & Liu Yilin 2430026139 \\
+\end{tabular}\\[8pt]
 Date: 13 November 2026
 \end{center}
 
