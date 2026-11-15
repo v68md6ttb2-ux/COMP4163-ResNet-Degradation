@@ -50,9 +50,38 @@ trained at all at 0.3 or 0.5, while plain-20 converges at both.
 
 ## Seeds at the selected rates
 
-`plain-56` at lr 0.03 needs seeds 1 and 2 to complete the three-seed check for
-H2; seed 0 is the tuning run. `plain-20` at lr 0.1 already has all three seeds,
-because that rate is also the replication's seed 0/1/2 configuration.
+`plain-20` at lr 0.1 already has three seeds, because that rate is also the
+replication's seed 0/1/2 configuration. `plain-56` at lr 0.03 was completed with
+seeds 1 and 2 to match.
+
+| Network (selected lr) | Seed | Train 45k (%) | Val 5k (%) | Test 10k (%) |
+|---|---|---|---|---|
+| plain-20 (0.1) | 0 | 0.43 | 9.14 | 10.15 |
+| plain-20 (0.1) | 1 | 0.38 | 9.42 | 9.55 |
+| plain-20 (0.1) | 2 | 0.48 | 9.04 | 9.92 |
+| plain-20 (0.1) | **mean** | **0.43** | 9.20 | **9.87** |
+| plain-20 (0.1) | **spread** | 0.11 | 0.38 | 0.60 |
+| plain-56 (0.03) | 0 | 1.94 | 15.10 | 15.61 |
+| plain-56 (0.03) | 1 | 1.37 | 13.44 | 13.95 |
+| plain-56 (0.03) | 2 | 1.89 | 12.54 | 13.07 |
+| plain-56 (0.03) | **mean** | **1.73** | 13.69 | **14.21** |
+| plain-56 (0.03) | **spread** | 0.57 | 2.56 | 2.54 |
+
+## Hypothesis H2
+
+> The degradation persists after each network is tuned, and the difference
+> exceeds the spread across seeds.
+
+Confirmed at both rates. At the selected rates the deep network is worse by
+1.30 points on training error against a larger seed spread of 0.57, by 2.12
+points on the running training error against 0.68, and by 4.34 points on test
+error against 2.54. Tuning each depth to its own best rate therefore does not
+remove the degradation.
+
+Worth recording: the seed spread at the selected rate is much wider for
+plain-56 (2.54 points on test) than for plain-20 (0.60), which is itself part of
+the picture -- the deeper plain network is not only worse on average but much
+less reproducible.
 
 ## Operational notes
 
