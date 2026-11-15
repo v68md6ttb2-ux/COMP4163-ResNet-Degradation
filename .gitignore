@@ -1,13 +1,12 @@
 .venv/
-runs/
 __pycache__/
 *.pyc
-*.pth
 
-# CIFAR-10 download (170 MB, exceeds GitHub's per-file limit; fetched by src/data.py)
+# CIFAR-10 download (170 MB, over GitHub's 100 MB per-file limit; fetched by
+# src/data.py or scripts/fetch_cifar.sh)
 data/
 
-# Scratch: download parts and run queues
+# Scratch: download parts, run queues, and interrupted runs kept for the record
 build/
 
 # LaTeX build products

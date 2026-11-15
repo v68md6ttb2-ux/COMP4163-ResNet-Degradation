@@ -1,0 +1,43 @@
+{
+  "arch": "resnet",
+  "depth": 20,
+  "shortcut": "A",
+  "seed": 1,
+  "parameters": 269722,
+  "epochs_completed": 183,
+  "iterations_run": 64000,
+  "diverged": false,
+  "diverged_iteration": null,
+  "final": {
+    "iteration": 64000,
+    "running_train_err": 0.5119301994301995,
+    "train_err": 0.19111111111111112,
+    "val_err": 8.34,
+    "test_err": 8.83
+  },
+  "elapsed_s": 2067.5198724269867,
+  "args": {
+    "arch": "resnet",
+    "depth": 20,
+    "shortcut": "A",
+    "seed": 1,
+    "iters": 64000,
+    "batch_size": 128,
+    "lr": 0.1,
+    "lr_milestones": [
+      32000,
+      48000
+    ],
+    "lr_gamma": 0.1,
+    "warmup_iters": 0,
+    "warmup_lr": 0.01,
+    "momentum": 0.9,
+    "weight_decay": 0.0001,
+    "data_dir": "data",
+    "no_download": false,
+    "out": "runs/resnet20-s1",
+    "device": "cuda",
+    "no_amp": false,
+    "amp": true
+  }
+}

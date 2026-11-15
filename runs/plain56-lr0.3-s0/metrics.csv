@@ -1,0 +1,2 @@
+epoch,iteration,lr,running_train_err,train_err,val_err,test_err,epoch_loss,elapsed_s
+1,22,0.3,90.2344,89.9844,90.1400,90.0000,0.018229,24.5
