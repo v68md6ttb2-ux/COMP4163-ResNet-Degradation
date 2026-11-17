@@ -36,17 +36,18 @@ trained at all at 0.3 or 0.5, while plain-20 converges at both.
 ## Two qualifications to state in the report
 
 1. **The plain-20 selection is nominal.** 0.1 (0.429%) and 0.3 (0.431%) differ
-   by 0.002 percentage points, which is far below any meaningful resolution,
-   and the seed-to-seed spread of plain-20 at lr 0.1 is 0.11 points on the
-   training error. The rule selects 0.1, but the two rates should be described
-   as tied. On test error, 0.3 is in fact the better of the two (8.82% against
-   10.15%), and better than the paper's own 0.1 setting.
-2. **Selection on training error and test performance disagree for plain-56.**
-   The selected rate (0.03, training error 1.94%) has a *higher* test error
-   (15.61%) than the unselected 0.1 (training error 2.81%, test error 14.58%).
-   The pre-registered rule is followed as written, but the report must say that
-   for the deeper plain network, the rate that fits the training set best is not
-   the rate that generalises best.
+   by 0.002 percentage points, far below any meaningful resolution, and the
+   seed-to-seed spread of plain-20 at lr 0.1 is 0.11 points on the training
+   error. The rule selects 0.1, but the two rates should be described as tied.
+2. **The tuning grid is one seed per setting**, by design, so differences
+   between grid points are single-run comparisons and none of them should be
+   read as significant. Comparing the selected 0.03 with the unselected 0.1 on
+   *test* error illustrates the trap: on the two tuning runs it looks as though
+   0.1 is better (14.58 against 15.61), but on the full three-seed sets the
+   selected rate is in fact slightly better (14.18 against 14.43), a difference
+   well inside the 2.44-point spread. The selection rule is defined on the
+   training error and is applied as written; the test comparison across rates
+   is descriptive only.
 
 ## Seeds at the selected rates
 

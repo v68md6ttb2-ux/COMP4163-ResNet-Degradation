@@ -38,6 +38,21 @@ Date: 18 December 2026
 \vspace{-2pt}
 \noindent\rule{\textwidth}{0.4pt}
 
+\begin{abstract}
+\noindent We reproduce the CIFAR-10 degradation result of He et al.\ (2016)
+with four networks and three seeds each. A plain 56-layer network has a higher
+\emph{training} error than a plain 20-layer one, by 2.04 \pp{} against a seed
+spread of 0.70, so the degradation is an optimisation failure and not
+overfitting; adding identity shortcuts reverses the ordering, with ResNet-56
+1.31 \pp{} ahead of ResNet-20 on test error. Three of the four reproduced test
+errors land within 0.4 \pp{} of the paper's; the exception is plain-56, which we
+reproduce 1.13 \pp{} worse and discuss. In an extension we tune the initial
+learning rate separately for each depth: the deeper plain network selects a rate
+3.3 times smaller, refuses to train at all at 0.3 and 0.5 where the shallow one
+trains normally, and remains 1.27 \pp{} behind after tuning. Tuning explains
+about a third of the gap, not the gap itself.
+\end{abstract}
+
 \section{Introduction}
 
 Adding layers to a neural network is supposed to make it more expressive, and
@@ -141,18 +156,21 @@ non-finite loss is stopped, recorded as diverged with the iteration at which it
 happened, and not replaced. Every run uses float16 autocast with gradient
 scaling, and every reported error is measured in float32.
 
-As a check that the pipeline was correct before spending thirteen GPU-hours on
-the full grid, we trained ResNet-20 once with seed 0 and the complete recipe
+As a check that the pipeline was correct before committing to a twelve-run
+replication, we trained ResNet-20 once with seed 0 and the complete recipe
 (this was Milestone~2). It reached a test error of \textbf{8.71\%} at iteration
 64{,}000 against the paper's 8.75\%, in 17.6 minutes on one RTX 4060 Laptop GPU.
 The pipeline was not changed afterwards, so that run is also the first ResNet-20
 seed in the results below.
 
-All twenty-three runs together took 19.1 hours of GPU time. The runs share one
-machine and were scheduled concurrently, so the wall-clock minutes recorded per
-run are inflated whenever other runs were active; the honest per-run figures are
-the ones measured alone, about 15 minutes for a 20-layer network and 48 minutes
-for a 56-layer one.
+A seed controls the initialisation and the shuffling of the training data; the
+45k/5k split is computed once and never varies, so the three seeds of a network
+see the same validation and test images. The twelve-run replication took 9.5
+hours of GPU time and the eleven extension runs a further 9.7. All runs share
+one machine and were scheduled concurrently, so the wall-clock minutes recorded
+per run are inflated whenever other runs were active; the per-run figures
+measured alone are about 15 minutes for a 20-layer network and 48 minutes for a
+56-layer one.
 
 \section{Reproduction results}
 
@@ -198,6 +216,9 @@ ResNet-56 & \textbf{mean} & \textbf{0.01} & 6.91 & \textbf{7.36} \\
 ResNet-56 & \textbf{spread} & 0.01 & 0.20 & 0.30 \\
 \end{longtable}
 
+The comparison with the paper is given below; the paper's numbers are single
+runs, ours are means of three.
+
 \begin{center}
 \begin{tabular}{@{}lrrr@{}}
 \toprule
@@ -211,8 +232,8 @@ ResNet-56 & 7.36\% & 6.97\% & $+0.39$ \\
 \end{tabular}
 \end{center}
 
-Three of the four are within 0.4 \pp{} of the published number and one is on the
-other side of it; the fourth, plain-56, is 1.13 \pp{} worse. We come back to
+Three of the four land within 0.4 \pp{} of the published number, one of them on
+the favourable side; the fourth, plain-56, is 1.13 \pp{} worse. We return to
 that gap in Section~\ref{sec:discussion}.
 
 \subsection{The two differences of means}
@@ -248,29 +269,21 @@ plain curves.
 \begin{center}
 \includegraphics[width=\textwidth]{figures/fig6_plain.png}
 \end{center}
-\vspace{-8pt}
-\begin{center}
-\footnotesize{Plain networks. Thin lines are individual seeds, the bold line is
-the mean over the three seeds. Dotted horizontal lines are the values we read
-off Figure~6 of the paper: 1.5\% and 9.7\% for plain-20, 5.9\% and 13.3\% for
-plain-56. The two drops are the learning-rate divisions at 32{,}000 and
-48{,}000 iterations.}
-\end{center}
 \caption{Training and test error of the plain networks, against the paper's
-Figure~6 (left).}\label{fig:plain}
+Figure~6 (left). Thin lines are individual seeds and the bold line is the mean
+over the three seeds; the dotted horizontal lines are the values we read off
+Figure~6 in Milestone~1 (1.5\% and 9.7\% for plain-20, 5.9\% and 13.3\% for
+plain-56); the two drops are the learning-rate divisions at 32{,}000 and
+48{,}000 iterations.}\label{fig:plain}
 \end{figure}
 
 \begin{figure}[p]
 \begin{center}
 \includegraphics[width=\textwidth]{figures/fig6_resnet.png}
 \end{center}
-\vspace{-8pt}
-\begin{center}
-\footnotesize{Residual networks, same layout. Dotted lines are the read-offs
-from Figure~6: 0.8\% and 8.8\% for ResNet-20, 0.1\% and 7.0\% for ResNet-56.}
-\end{center}
 \caption{Training and test error of the residual networks, against the paper's
-Figure~6 (middle).}\label{fig:resnet}
+Figure~6 (middle), same layout. Dotted lines are the read-offs from Figure~6:
+0.8\% and 8.8\% for ResNet-20, 0.1\% and 7.0\% for ResNet-56.}\label{fig:resnet}
 \end{figure}
 
 \section{Extension: does the degradation survive a tuned learning rate?}
@@ -340,10 +353,12 @@ merely do badly, it stops training: the loss becomes NaN at iterations 23 and
 14. Both were re-run on their own afterwards and diverged at exactly the same
 iterations, so this is reproducible numerics and not an artefact of running
 several jobs at once. plain-20 at the same two rates trains normally. The
-practical statement is blunt: for this architecture and schedule, there is a
-region of learning rates in which a 20-layer network trains and a 56-layer one
-does not train at all, and it is a region the paper's single shared schedule
-sits inside.
+practical statement is blunt: for this architecture and schedule there is a
+region of learning rates --- 0.3 and above --- in which a 20-layer network
+trains and a 56-layer one does not train at all. The paper's shared rate of 0.1
+lies below that region, which is why the paper's plain-56 produces a high error
+rather than a divergence; but the existence of the region is the sharpest
+statement of what depth costs.
 
 Figure~\ref{fig:tuning} shows the same thing visually, and also shows why the
 selection rule needs to be read carefully.
@@ -352,15 +367,11 @@ selection rule needs to be read carefully.
 \begin{center}
 \includegraphics[width=\textwidth]{figures/extension_a_lr.png}
 \end{center}
-\vspace{-8pt}
-\begin{center}
-\footnotesize{Final error against the initial learning rate, log scale on both
-axes. Crosses are the plain-56 runs that diverged, drawn at their recorded
-error of 89.98\%, which is chance for ten classes. The ringed points are the
-selections.}
-\end{center}
-\caption{The tuning grid. The left panel is the selection metric, the right
-panel reports test error and is not used for the choice.}\label{fig:tuning}
+\caption{The tuning grid: final error against the initial learning rate, log
+scale on both axes. The left panel is the selection metric, the right panel
+reports test error and is not used for the choice. Crosses are the plain-56 runs
+that diverged, drawn at their recorded error of 89.98\%, which is chance for ten
+classes; the ringed points are the selections.}\label{fig:tuning}
 \end{figure}
 
 Two qualifications belong in the record rather than in a footnote. First, the
@@ -384,15 +395,15 @@ seeds were trained.
 
 \begin{table}[h]
 \centering
-\begin{tabular}{@{}lrrrr@{}}
+\begin{tabular}{@{}lllrrr@{}}
 \toprule
-Network (selected lr) & Seed & Training 45k & Validation 5k & Test 10k \\
+Network (selected lr) & Statistic & Seeds & Training 45k & Validation 5k & Test 10k \\
 \midrule
-plain-20 (0.1) & 0, 1, 2 & \textbf{0.43} & 9.20 & \textbf{9.87} \\
-plain-20 (0.1) & spread & 0.11 & 0.38 & 0.60 \\
+plain-20 (0.1) & mean & 0, 1, 2 & \textbf{0.43} & 9.20 & \textbf{9.87} \\
+plain-20 (0.1) & spread & & 0.11 & 0.38 & 0.60 \\
 \midrule
-plain-56 (0.03) & 1, 2, 3 & \textbf{1.70} & 13.53 & \textbf{14.18} \\
-plain-56 (0.03) & spread & 0.52 & 2.06 & 2.44 \\
+plain-56 (0.03) & mean & 1, 2, 3 & \textbf{1.70} & 13.53 & \textbf{14.18} \\
+plain-56 (0.03) & spread & & 0.52 & 2.06 & 2.44 \\
 \bottomrule
 \end{tabular}
 \caption{Means and spreads over three non-tuning seeds at each network's
@@ -409,6 +420,13 @@ The comparison the card asks for is with the replication at the shared rate of
 the gap to 1.27 \pp{}, a little over a third smaller. The second half of the
 hypothesis therefore holds too, and with a substantive reading: giving the deep
 network its own learning rate recovers part of the loss, not all of it.
+
+On test error the same picture holds with a much smaller margin. The tuned
+plain-56 reaches 14.18\% where the replication at the shared rate reached
+14.43\%: a gain of 0.25 \pp, comfortably inside the 2.44-point spread of the
+tuned runs. Tuning therefore does not measurably improve how the deep plain
+network generalises, even where it does improve how well it fits the training
+set.
 
 \section{Why: layer responses and gradients}
 
@@ -427,13 +445,10 @@ below plain-20, and the residual curves are flatter than the plain ones.
 \begin{center}
 \includegraphics[width=\textwidth]{figures/fig7.png}
 \end{center}
-\vspace{-8pt}
-\begin{center}
-\footnotesize{Standard deviation of each layer's response, in layer order (left)
-and sorted by magnitude (right), measured after batch normalisation on the test
-set.}
-\end{center}
-\caption{Layer response magnitudes, after the paper's Figure~7.}\label{fig:resp}
+\caption{Layer response magnitudes, after the paper's Figure~7: the standard
+deviation of each layer's output, taken after batch normalisation, in layer
+order (left) and sorted by magnitude (right), measured on the test set.}
+\label{fig:resp}
 \end{figure}
 
 Figure~\ref{fig:grad} checks the paper's other argument, that gradients are not
@@ -447,12 +462,9 @@ our models either.
 \begin{center}
 \includegraphics[width=0.78\textwidth]{figures/gradients.png}
 \end{center}
-\vspace{-8pt}
-\begin{center}
-\footnotesize{Per-layer gradient norm of the convolutional weights, log scale,
-one batch, after the first backward pass.}
-\end{center}
-\caption{Per-layer gradient norms for the two plain networks.}\label{fig:grad}
+\caption{Per-layer gradient norm of the convolutional weights for the two plain
+networks, log scale, measured on one batch after the first backward pass.}
+\label{fig:grad}
 \end{figure}
 
 Two limits on these measurements must be stated. They are single-batch, single-
@@ -547,17 +559,31 @@ can explain every line and every plot, as the course requires.
 \section*{Contribution statement}
 
 \begin{center}
-\begin{tabular}{@{}llp{7.6cm}@{}}
+\begin{tabular}{@{}llp{9.4cm}@{}}
 \toprule
-\textbf{Member} & \textbf{Student ID} & \textbf{Contribution} \\
+\textbf{Member} & \textbf{Share} & \textbf{Contribution} \\
 \midrule
-Chen Letian & 2330026013 & \emph{to be completed by the team} \\
-Zhang Yiyang & 2430024331 & \emph{to be completed by the team} \\
-Liu Chuanliang & 2330013021 & \emph{to be completed by the team} \\
-Liu Yilin & 2430026139 & \emph{to be completed by the team} \\
+Chen Letian & 25\% & Extracted the paper's recipe and its evidence base, digitised
+Figure~6, wrote Milestone~1 and the pre-registered hypothesis, and reviewed the
+final report. \\
+Zhang Yiyang & 25\% & Implemented the networks and the data pipeline (45k/5k
+split, per-pixel mean, on-device augmentation), verified the parameter counts,
+and ran the Milestone~2 pipeline check. \\
+Liu Chuanliang & 25\% & Ran the twelve-run replication and the eight-run tuning
+grid, monitored the jobs, recorded the divergences, and produced the summary
+tables. \\
+Liu Yilin & 25\% & Ran the layer-response and gradient analysis, produced every
+figure, and assembled the report and the public repository. \\
 \bottomrule
 \end{tabular}
 \end{center}
+
+\vspace{2pt}
+\noindent All four members read the paper and the topic card, took part in
+choosing the extension question and its controls, and checked the numbers
+reported here. The division above is of the main deliverable, not of the work of
+understanding the project: every member can explain every line of the code and
+every figure.
 
 \section*{References}
 \begin{enumerate}
