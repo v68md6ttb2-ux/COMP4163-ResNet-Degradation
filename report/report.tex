@@ -295,7 +295,7 @@ deeper one slightly below at the end. In both panels the seed-to-seed spread is
 visible as the thin lines, and it is small compared with the gap between the
 plain curves.
 
-\begin{figure}[p]
+\begin{figure}[tbp]
 \begin{center}
 \includegraphics[width=\textwidth]{figures/fig6_plain.png}
 \end{center}
@@ -307,7 +307,7 @@ plain-56); the two drops are the learning-rate divisions at 32{,}000 and
 48{,}000 iterations.}\label{fig:plain}
 \end{figure}
 
-\begin{figure}[p]
+\begin{figure}[tbp]
 \begin{center}
 \includegraphics[width=\textwidth]{figures/fig6_resnet.png}
 \end{center}
@@ -393,7 +393,7 @@ statement of what depth costs.
 Figure~\ref{fig:tuning} shows the same thing visually, and also shows why the
 selection rule needs to be read carefully.
 
-\begin{figure}[p]
+\begin{figure}[tbp]
 \begin{center}
 \includegraphics[width=\textwidth]{figures/extension_a_lr.png}
 \end{center}
@@ -476,7 +476,7 @@ decays more steeply than plain-56 (a largest-to-smallest ratio of 5.1 against
 layer responses in both families, and identity shortcuts do not visibly undo
 that.
 
-\begin{figure}[p]
+\begin{figure}[tbp]
 \begin{center}
 \includegraphics[width=\textwidth]{figures/fig7.png}
 \end{center}
@@ -493,7 +493,7 @@ network's gradients are smaller, but they are not zero and they are not
 exponentially suppressed: the degradation is not a vanishing-gradient story in
 our models either.
 
-\begin{figure}[p]
+\begin{figure}[tbp]
 \begin{center}
 \includegraphics[width=0.78\textwidth]{figures/gradients.png}
 \end{center}
@@ -587,7 +587,6 @@ differences.
 other widths, or other shortcut options. The extension varies one factor only.
 \end{itemize}
 
-\clearpage
 \section*{AI use declaration}
 We used Claude Code (Anthropic) as a coding and writing assistant. It wrote the
 training, evaluation, plotting and summarisation code, and drafted this report
@@ -604,29 +603,26 @@ can explain every line and every plot, as the course requires.
 \toprule
 \textbf{Member} & \textbf{Share} & \textbf{Contribution} \\
 \midrule
-Chen Letian & 25\% & Extracted the paper's recipe and its evidence base, digitised
-Figure~6, wrote Milestone~1 and the pre-registered hypothesis, and reviewed the
-final report. \\
-Zhang Yiyang & 25\% & Implemented the networks and the data pipeline (45k/5k
-split, per-pixel mean, on-device augmentation), verified the parameter counts,
-and ran the Milestone~2 pipeline check. \\
-Liu Chuanliang & 25\% & Ran the twelve-run replication and the eight-run tuning
-grid, monitored the jobs, recorded the divergences, and produced the summary
-tables. \\
-Liu Yilin & 25\% & Ran the layer-response and gradient analysis, produced every
-figure, and assembled the report and the public repository. \\
+Chen Letian & 25\% & Paper extraction and evidence base, Figure~6 digitisation,
+Milestone~1, the pre-registered hypothesis. \\
+Zhang Yiyang & 25\% & Networks and data pipeline (split, per-pixel mean, on-device
+augmentation), parameter checks, Milestone~2. \\
+Liu Chuanliang & 25\% & The twelve-run replication and the eight-run tuning grid,
+job monitoring, divergence records, summary tables. \\
+Liu Yilin & 25\% & Layer-response and gradient analysis, every figure, the
+report and the repository. \\
 \bottomrule
 \end{tabular}
 \end{center}
 
 \vspace{2pt}
-\noindent All four members read the paper and the topic card, took part in
-choosing the extension question and its controls, and checked the numbers
-reported here. The division above is of the main deliverable, not of the work of
-understanding the project: every member can explain every line of the code and
-every figure.
+\noindent{\footnotesize All four members read the paper and the topic card, took
+part in choosing the extension and its controls, and checked the numbers here;
+every member can explain every line of the code and every figure.}
 
+\vspace{2pt}
 \section*{References}
+{\small
 \begin{enumerate}
 \item K.~He, X.~Zhang, S.~Ren, J.~Sun. Deep residual learning for image
 recognition. CVPR 2016.
@@ -638,6 +634,7 @@ Technical report, University of Toronto, 2009.
 The shattered gradients problem: if resnets are the answer, then what is the
 question? ICML 2017.
 \end{enumerate}
+}
 
 \noindent\footnotesize{Code, run outputs and the scripts that produce every table
 and figure in this report are at \texttt{github.com/\allowbreak
