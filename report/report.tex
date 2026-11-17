@@ -88,6 +88,24 @@ we give the recipe and our implementation in enough detail to be checked, then
 the reproduction, then a controlled experiment that asks whether the
 degradation survives when each depth is allowed its own learning rate.
 
+\subsection{Background: what the course reading already says}
+
+The reading for this topic (Prince, 2023, \S11.1--11.4) presents the same
+symptom and a conjectural mechanism. Prince notes that both training and test
+performance fall as layers are added, so the problem lies in training rather
+than in generalisation, and conjectures that right after initialisation the loss
+gradient changes unpredictably when parameters in early layers move. The
+derivative assumes an infinitesimal change while an optimiser takes a finite
+step, so a perfectly reasonable step can land where the gradient is unrelated to
+the one that produced it. The supporting evidence is the autocorrelation of
+gradients across nearby inputs, which stays high for shallow networks and
+collapses for deep ones --- the shattered gradients of Balduzzi et al.\ (2017).
+
+What He et al.\ add to this account is the remedy rather than a different
+diagnosis: with an identity shortcut a block can represent ``do nothing''
+exactly, so the optimiser is no longer forced to discover an identity mapping
+through a stack of non-linear layers, and depth stops costing accuracy.
+
 \section{What we reproduce, and how strong the paper's evidence is}
 
 We reproduce the CIFAR-10 evidence: Figure~6 (left and middle) and the
@@ -121,7 +139,8 @@ network alone gets a short warm-up, which does not concern us.
 
 Several choices are left open, and our decisions are:
 
-\begin{center}
+\begin{table}[htbp]
+\centering
 \begin{tabular}{@{}p{3.6cm}p{5.2cm}p{6.4cm}@{}}
 \toprule
 \textbf{Open choice} & \textbf{What the paper says} & \textbf{Our decision} \\
@@ -133,7 +152,9 @@ How the Figure~6 training error is measured & Not stated & Report both an evalua
 Interface between the epoch and the schedule & Epochs are not used & Everything counted in iterations; an epoch is 351 iterations, i.e.\ $45{,}000/128$ with the last partial batch dropped \\
 \bottomrule
 \end{tabular}
-\end{center}
+\caption{The choices the paper leaves open, and what we chose for each.}
+\label{tab:choices}
+\end{table}
 
 \section{Our pipeline}
 
@@ -252,6 +273,15 @@ $14.43 - 9.87 = 4.56$ \pp.
 against a larger spread of 0.34, so real; the paper's corresponding figure is
 $8.75 - 6.97 = 1.78$ \pp{} from one run each. Our ordering matches the paper's
 direction, and our gap is 0.47 \pp{} smaller.
+
+\textbf{Plain versus residual at fixed depth.} The comparison that carries the
+paper's main claim is not between two residual depths but between the plain and
+the residual network of the same depth, since the two have identical depth,
+width and parameter count. At depth 56 the residual network is 7.07 \pp{}
+better on test error (7.36 against 14.43) and 2.46 \pp{} better on training
+error (0.01 against 2.47); at depth 20 the corresponding gains are 1.19 and
+0.22 \pp{}. The gain grows with depth, which is what the paper reports and what
+an explanation based on capacity cannot produce.
 
 \subsection{Curves}
 
@@ -436,10 +466,15 @@ images.
 
 Figure~\ref{fig:resp} repeats the measurement behind the paper's Figure~7: the
 standard deviation of each layer's output, taken after batch normalisation. The
-paper's reading is that plain networks have conspicuously smaller responses as
-depth grows, while residual networks keep theirs comparable. Our models show
-exactly that ordering: over the sorted curves, plain-56 sits systematically
-below plain-20, and the residual curves are flatter than the plain ones.
+paper reads two things from it --- plain networks have conspicuously smaller
+responses as depth grows, and residual networks keep theirs comparable across
+layers. Our models reproduce the first and not the second. On the sorted curves
+plain-56 sits systematically below plain-20, which is the ordering the paper
+shows; but the residual networks shrink as well, and by our numbers ResNet-56
+decays more steeply than plain-56 (a largest-to-smallest ratio of 5.1 against
+3.3). We report this as a partial match: in our trained models depth shrinks
+layer responses in both families, and identity shortcuts do not visibly undo
+that.
 
 \begin{figure}[p]
 \begin{center}
@@ -471,7 +506,10 @@ Two limits on these measurements must be stated. They are single-batch, single-
 step diagnostics on one seed, not a study of training dynamics, and the
 response measurement depends on the batch statistics used in evaluation mode.
 They are consistent with the paper's account; they do not independently establish
-its causal claim.
+its causal claim. Note also that these are the paper's diagnostics, not the
+textbook's: we measure response magnitudes and gradient norms, not the
+autocorrelation of gradients that Prince's conjecture rests on, so nothing here
+tests the shattered-gradients story directly.
 
 \section{Discussion}
 \label{sec:discussion}
@@ -501,11 +539,13 @@ deeper plain network is worse on average and much less stable run to run. A
 single-run comparison at this depth, which is what the paper's Table~6 provides,
 carries an uncertainty that the paper does not report.
 
-\textbf{What the residual connections change.} Our residuals gain 1.31 \pp{}
-over their plain counterparts at depth 56 in the same direction as the paper's
-1.78, and remove the response shrinkage that Figure~\ref{fig:resp} shows. We
-did not test the paper's options B and C for the shortcut, so we can say that
-option A works, not that it is the best option.
+\textbf{What the residual connections change.} At depth 56 the residual network
+is 7.07 \pp{} better on test error than the plain network with the same depth,
+width and parameter count, and at depth 20 only 1.19 \pp{} better: the
+parameterisation buys more the deeper the network is, which is the paper's
+claim. What it does \emph{not} visibly do in our runs is flatten the
+layer-response profile. We did not test the paper's options B and C for the
+shortcut, so we can say that option A works, not that it is the best option.
 
 \section{Conclusion}
 
@@ -524,9 +564,10 @@ as the paper's 1.78.
 depth. The selected rate is lower for the deeper network (0.03 against 0.1),
 plain-56 diverges outright at 0.3 and 0.5 while plain-20 trains there, and after
 tuning the training gap is still 1.27 \pp{} against a 0.52 spread.
-\item Layer responses shrink with depth in the plain networks and stay flatter
-in the residual ones, and gradients do not vanish in either plain network. Both
-are consistent with the paper's account.
+\item Layer responses shrink with depth in the plain networks, and gradients do
+not vanish in either plain network. Both agree with the paper's account, with
+one exception we report rather than smooth over: our residual networks do not
+reproduce the flattened response profile the paper shows for ResNet-110.
 \end{itemize}
 
 \subsection*{What our experiments do not show}
