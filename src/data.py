@@ -30,7 +30,12 @@ IMAGE = 32
 class CIFAR10Data:
     """CIFAR-10 tensors on ``device`` with the 45k/5k split of the protocol."""
 
-    def __init__(self, root: str = "data", download: bool = True, device: torch.device | str = "cuda"):
+    def __init__(self, root: str = "data", download: bool = True,
+                 device: torch.device | str = "cuda", num_train: int = NUM_TRAIN):
+        """``num_train=45_000`` is the course protocol.  Passing 50_000 trains
+        on all of CIFAR-10 and leaves no validation set; that variant exists
+        only to test whether the protocol's smaller training set explains the
+        gap between our plain-56 and the paper's."""
         train = datasets.CIFAR10(root=root, train=True, download=download)
         test = datasets.CIFAR10(root=root, train=False, download=download)
 
@@ -40,16 +45,18 @@ class CIFAR10Data:
         y = torch.tensor(train.targets, dtype=torch.long)
         xt = torch.from_numpy(test.data).permute(0, 3, 1, 2).contiguous()
         yt = torch.tensor(test.targets, dtype=torch.long)
-        assert x.shape[0] == NUM_TRAIN + NUM_VAL == 50_000
+        assert x.shape[0] == 50_000
 
-        self.train_x = x[:NUM_TRAIN].to(device)
-        self.train_y = y[:NUM_TRAIN].to(device)
-        self.val_x = x[NUM_TRAIN:].to(device)
-        self.val_y = y[NUM_TRAIN:].to(device)
+        self.num_train = num_train
+        self.num_val = x.shape[0] - num_train
+        self.train_x = x[:num_train].to(device)
+        self.train_y = y[:num_train].to(device)
+        self.val_x = x[num_train:].to(device)
+        self.val_y = y[num_train:].to(device)
         self.test_x = xt.to(device)
         self.test_y = yt.to(device)
 
-        # Per-pixel mean over the 45,000 training images, shape (3, 32, 32).
+        # Per-pixel mean over the training images, shape (3, 32, 32).
         self.mean = self._per_pixel_mean(self.train_x)
 
     @staticmethod

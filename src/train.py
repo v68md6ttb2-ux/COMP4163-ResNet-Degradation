@@ -33,7 +33,7 @@ from pathlib import Path
 import torch
 import torch.nn as nn
 
-from .data import NUM_TRAIN, CIFAR10Data
+from .data import NUM_TRAIN, CIFAR10Data  # noqa: F401  (NUM_TRAIN documents the default)
 from .models import build_model, count_parameters
 
 DEFAULT_ITERS = 64_000
@@ -57,6 +57,9 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--momentum", type=float, default=0.9)
     p.add_argument("--weight-decay", type=float, default=1e-4)
     p.add_argument("--data-dir", default="data")
+    p.add_argument("--train-size", type=int, default=NUM_TRAIN,
+                   help="45,000 is the course protocol; 50,000 trains on all of "
+                        "CIFAR-10 with no validation set (sensitivity check only)")
     p.add_argument("--no-download", action="store_true")
     p.add_argument("--out", default=None)
     p.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu")
@@ -88,9 +91,9 @@ def main() -> None:
     if args.amp and device.type != "cuda":
         print("float16 autocast needs CUDA; running in float32", flush=True)
         args.amp = False
-    epoch_iters = NUM_TRAIN // args.batch_size
-
-    data = CIFAR10Data(root=args.data_dir, download=not args.no_download, device=device)
+    data = CIFAR10Data(root=args.data_dir, download=not args.no_download,
+                       device=device, num_train=args.train_size)
+    epoch_iters = data.num_train // args.batch_size
     model = build_model(args.arch, args.depth, args.shortcut).to(device)
     num_params = count_parameters(model)
     (out_dir / "model.txt").write_text(str(model), encoding="utf-8")
@@ -122,7 +125,7 @@ def main() -> None:
     while it < args.iters and not diverged:
         epoch += 1
         model.train()
-        perm = torch.randperm(NUM_TRAIN, generator=generator, device=device)
+        perm = torch.randperm(data.num_train, generator=generator, device=device)
         loss_sum, seen, correct = 0.0, 0, 0
         lr = learning_rate_at(it, args)
         for k in range(epoch_iters):
@@ -164,7 +167,8 @@ def main() -> None:
             "iteration": it,
             "running_train_err": 100.0 * (1.0 - run_correct / run_seen),
             "train_err": data.error(model, data.train_x, data.train_y),
-            "val_err": data.error(model, data.val_x, data.val_y),
+            "val_err": (data.error(model, data.val_x, data.val_y)
+                        if data.num_val else float("nan")),
             "test_err": data.error(model, data.test_x, data.test_y),
         }
         epoch_loss = loss_sum / max(seen, 1)

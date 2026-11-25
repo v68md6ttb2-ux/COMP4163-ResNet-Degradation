@@ -538,15 +538,14 @@ def main() -> None:
          "reproduction"),
     ])
 
-    d.bullets("DISCUSSION", "The one number that does not line up", [
-        ("plain-56 comes out at 14.43% where the paper reports 13.3%", None),
-        ("It is not seed noise: the spread at that depth is only 0.23 pp on "
-         "test error", None),
-        ("Most likely cause: we train on 45,000 images, the paper may have used "
-         "50,000", "We did not run the 50,000 variant, so this stays a "
-         "hypothesis"),
-        ("And the other three networks sit closer to the paper than a uniform "
-         "penalty would predict", "So we do not claim it is the whole story"),
+    d.bullets("DISCUSSION", "The one number that did not line up — and why", [
+        ("plain-56 came out at 14.43% where the paper reports 13.3%", None),
+        ("Not seed noise: the spread at that depth is only 0.23 pp", None),
+        ("The protocol fixes 45,000 images; the paper may have used all 50,000",
+         "So we ran it rather than leaving it as a conjecture"),
+        ("On 50,000 images plain-56 reaches 13.06%, just below the paper's 13.3%",
+         "The gap was our training set, not our implementation"),
+        ("And the degradation survives: 13.06 against plain-20's 9.44", None),
     ])
 
     d.bullets("OUR OWN FINDING", "Reproducibility is part of the result", [
@@ -567,6 +566,7 @@ def main() -> None:
                  "Tuning each depth reduces the gap by a third but does not "
                  "remove it",
                  "Gradients do not vanish; responses shrink with depth",
+                 "The 1.13-point plain-56 gap was the training set: 13.06% on 50k",
              ],
              "Not shown", [
                  "Why residual connections help — our diagnostics are "
@@ -625,6 +625,18 @@ def main() -> None:
          "split never changes", None),
         ("A run that diverges is recorded and not replaced", None),
     ])
+
+    d.table("BACKUP — THE 50,000-IMAGE CHECK", "Where the 1.13 points came from",
+            ["Network", "Images", "Train", "Test", "Paper"],
+            [["plain-20", "45,000", "0.43", "9.87", "9.7"],
+             ["plain-20", "50,000", "0.61", "9.44", "9.7"],
+             ["plain-56", "45,000", "2.47", "14.43", "13.3"],
+             ["plain-56", "50,000", "4.77", "13.06", "13.3"]],
+            caption="Three seeds each, everything else unchanged, no validation "
+                    "set in the 50k variant. Training error rises while test "
+                    "error falls — more data makes the deep plain network fit "
+                    "worse and generalise better.",
+            col_w=[1.8, 1.6, 1.4, 1.4, 1.4], size=15, hi=4)
 
     d.table("BACKUP — COMPUTE AND ARTEFACTS", "What it cost and where it is",
             ["Item", "Value"],

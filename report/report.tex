@@ -45,8 +45,10 @@ with four networks and three seeds each. A plain 56-layer network has a higher
 spread of 0.70, so the degradation is an optimisation failure and not
 overfitting; adding identity shortcuts reverses the ordering, with ResNet-56
 1.31 \pp{} ahead of ResNet-20 on test error. Three of the four reproduced test
-errors land within 0.4 \pp{} of the paper's; the exception is plain-56, which we
-reproduce 1.13 \pp{} worse and discuss. In an extension we tune the initial
+errors land within 0.4 \pp{} of the paper's; the fourth, plain-56, is 1.13 \pp{}
+worse, and we show that the cause is the protocol's 45{,}000-image training set
+--- on all 50{,}000 images it reaches 13.06\% against the paper's 13.3\%. In an
+extension we tune the initial
 learning rate separately for each depth: the deeper plain network selects a rate
 3.3 times smaller, refuses to train at all at 0.3 and 0.5 where the shallow one
 trains normally, and remains 1.27 \pp{} behind after tuning. Tuning explains
@@ -514,17 +516,45 @@ tests the shattered-gradients story directly.
 \section{Discussion}
 \label{sec:discussion}
 
-\textbf{The plain-56 gap.} Three of our four reproduced numbers are within
-0.4 \pp{} of the published value; plain-56 is 1.13 \pp{} worse. It is not seed
-noise: the seed spread at that depth is only 0.23 \pp{} on test error, so the
-gap is systematic for our setup. The most likely single cause is the training
-set. We train on 45{,}000 images; if the paper's networks saw all 50{,}000,
-that explains a uniform penalty, and plain-56 is the network most sensitive to
-it because it is the one that is furthest from fitting even the 45{,}000. The
-argument is weakened by the fact that the other three networks are closer to
-their published values than such a uniform penalty would predict, so we do not
-claim it is the whole story. The honest summary is that we reproduce the
-paper's \emph{ordering} precisely and its worst plain number only approximately.
+\textbf{The plain-56 gap, and what closed it.} Three of our four reproduced
+numbers are within 0.4 \pp{} of the published value; plain-56 came out 1.13
+\pp{} worse. That was not seed noise --- the spread at that depth is only 0.23
+\pp{} on test error --- so it had to be something in our setup rather than in
+the run.
+
+The obvious candidate was the training set: the protocol fixes 45{,}000 images
+while the paper may have used all 50{,}000. We tested it rather than leaving it
+as a conjecture. Repeating both plain networks on 50{,}000 images with
+everything else unchanged (Table~\ref{tab:fiftyk}) drops plain-56 from 14.43\%
+to 13.06\%, a little \emph{below} the paper's 13.3\%, and plain-20 from 9.87\%
+to 9.44\%. The gap is therefore explained by the training-set size.
+
+Two things about that check are worth more than the number. First, training
+error moved the other way --- from 2.47\% to 4.77\% --- so giving the deep plain
+network more data made it fit the training set \emph{worse} while generalising
+better. That is the degradation signature once more, and it says the phenomenon
+is not a shortage of data. Second, the degradation itself survives: at 50{,}000
+images plain-56 is still 3.62 \pp{} behind plain-20 on test error, against a
+larger spread of 1.19. Fixing the replication and removing the degradation turn
+out to be two different problems.
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{@{}llrrr@{}}
+\toprule
+Network & Training images & Train error & Test error & Paper \\
+\midrule
+plain-20 & 45{,}000 (protocol) & 0.43 & 9.87 & 9.7 \\
+plain-20 & \textbf{50{,}000} & \textbf{0.61} & \textbf{9.44} & 9.7 \\
+plain-56 & 45{,}000 (protocol) & 2.47 & 14.43 & 13.3 \\
+plain-56 & \textbf{50{,}000} & \textbf{4.77} & \textbf{13.06} & 13.3 \\
+\bottomrule
+\end{tabular}
+\caption{Training on all 50{,}000 images, three seeds per network, everything
+else unchanged. Means in percent at iteration 64{,}000; there is no validation
+set in this variant. The 50k runs are a sensitivity check, not part of the
+protocol, and are reported separately.}\label{tab:fiftyk}
+\end{table}
 
 \textbf{Tuning is not the explanation.} The natural objection to a degradation
 result is that the deep network is simply mis-tuned. Our extension tests that
@@ -568,6 +598,9 @@ tuning the training gap is still 1.27 \pp{} against a 0.52 spread.
 not vanish in either plain network. Both agree with the paper's account, with
 one exception we report rather than smooth over: our residual networks do not
 reproduce the flattened response profile the paper shows for ResNet-110.
+\item The one number that did not match the paper was our training set, not our
+implementation: on all 50{,}000 images plain-56 reaches 13.06\% against the
+paper's 13.3\%, and the degradation survives that change as well.
 \end{itemize}
 
 \subsection*{What our experiments do not show}
@@ -576,9 +609,9 @@ reproduce the flattened response profile the paper shows for ResNet-110.
 \item \emph{Why} residual connections help. Our response and gradient
 measurements are single-batch diagnostics consistent with the paper's account;
 they do not identify a mechanism, and we did not test the paper's options B and C.
-\item That the paper's recipe produces 13.3\% for plain-56. We get 14.43\%. The
-most plausible cause is the 45{,}000-image training set, but we did not run the
-50{,}000-image variant, so this remains a hypothesis.
+\item That 45{,}000 images is the only difference. Training on 50{,}000 closes
+the gap to plain-56, but we cannot tell whether the paper's networks used 50{,}000
+--- it is an inference from the numbers, not something the paper states.
 \item Anything about rates between or beyond the five grid points, or about
 differences in test error between grid points: the grid is one seed per setting
 by design, and the run-to-run spread at depth 56 is larger than those

@@ -1,0 +1,44 @@
+{
+  "arch": "plain",
+  "depth": 56,
+  "shortcut": "A",
+  "seed": 2,
+  "parameters": 853018,
+  "epochs_completed": 165,
+  "iterations_run": 64000,
+  "diverged": false,
+  "diverged_iteration": null,
+  "final": {
+    "iteration": 64000,
+    "running_train_err": 3.872195512820509,
+    "train_err": 2.526,
+    "val_err": NaN,
+    "test_err": 12.34
+  },
+  "elapsed_s": 2270.7653295993805,
+  "args": {
+    "arch": "plain",
+    "depth": 56,
+    "shortcut": "A",
+    "seed": 2,
+    "iters": 64000,
+    "batch_size": 128,
+    "lr": 0.1,
+    "lr_milestones": [
+      32000,
+      48000
+    ],
+    "lr_gamma": 0.1,
+    "warmup_iters": 0,
+    "warmup_lr": 0.01,
+    "momentum": 0.9,
+    "weight_decay": 0.0001,
+    "data_dir": "data",
+    "train_size": 50000,
+    "no_download": false,
+    "out": "runs/plain56-50k-s2",
+    "device": "cuda",
+    "no_amp": false,
+    "amp": true
+  }
+}
