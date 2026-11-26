@@ -367,34 +367,26 @@ def main() -> None:
     d.title()
     d.agenda([
         ("1", "The puzzle: why a deeper network should never be worse",
-         "Chen Letian", "4 min"),
+         "Chen Letian", "3 min"),
         ("2", "Our pipeline, and the check that it matches the paper",
-         "Zhang Yiyang", "4 min"),
+         "Zhang Yiyang", "3 min"),
         ("3", "The replication, and experiment 1: is it just mis-tuning?",
-         "Liu Chuanliang", "6 min"),
+         "Liu Chuanliang", "4 min"),
         ("4", "Why it happens, experiment 2, and what we cannot claim",
-         "Liu Yilin", "5 min"),
+         "Liu Yilin", "3 min"),
     ])
 
     # ---------------------------------------------------------- part 1
     d.section("1", "The puzzle", "A deeper network should never be worse than "
               "a shallower one — yet it is.", "Chen Letian")
 
-    d.bullets("THE INTUITION", "Deeper should never be worse", [
-        ("More layers means more expressive power", None),
-        ("A 56-layer net can imitate a 20-layer one: set the extra layers "
-         "to identity", None),
-        ("So a 56-layer network should be at least as good as a 20-layer one",
-         "Anything worse must be an optimisation failure, not a lack of capacity"),
-    ])
-
-    d.bullets("WHAT THE PAPER REPORTS", "But the deeper network fits the "
-              "training set worse", [
-        ("He et al. (2016) train plain 20- and 56-layer networks on CIFAR-10 "
-         "with the same recipe", None),
-        ("The 56-layer network has a higher training error than the 20-layer one",
-         "Our own reproduction at iteration 64,000: 2.47% against 0.43%"),
-    ], lead="This is what we reproduce.")
+    d.bullets("THE PUZZLE", "Deeper should never be worse", [
+        ("A 56-layer net can imitate a 20-layer one: set the extra layers to identity",
+         "So a 56-layer network should be at least as good as a 20-layer one"),
+        ("He et al. (2016) train both on CIFAR-10 with the same recipe",
+         "The 56-layer network has the higher training error: 2.47% against 0.43%"),
+        ("The deeper network cannot even fit what it is trained on", None),
+    ], size=22)
 
     d.twocol("THE DISTINCTION THAT MATTERS", "Degradation is not overfitting",
              "Overfitting", [
@@ -409,24 +401,13 @@ def main() -> None:
              ],
              foot="Both errors rising is what rules out the obvious explanation.")
 
-    d.bullets("WHY IT MATTERS", "Why this result matters", [
-        ("Residual networks are the backbone of most modern vision systems",
-         None),
-        ("The paper is not just a negative result — it is the argument for the "
-         "architecture", None),
-        ("So the mechanism has to be understood, not just the number reproduced",
-         None),
-    ])
-
     d.table("MILESTONE 1 EXTRACTION", "How strong is the paper's evidence?",
             ["CIFAR-10 claim", "What the paper shows"],
             [["Figure 6 (curves)", "One curve per depth; number of runs not stated"],
-             ["Table 6, ResNet-20", "Single run (8.75%)"],
-             ["Table 6, ResNet-56", "Single run (6.97%)"],
-             ["Table 6, ResNet-110", "Five runs: best 6.43%, mean 6.61 ± 0.16"]],
+             ["Table 6, ResNet-20 and ResNet-56", "Single runs (8.75% and 6.97%)"],
+             ["Table 6, ResNet-110", "Five runs: best 6.43%, mean 6.61 plus or minus 0.16"]],
             caption="No seed spread is reported for any network we reproduce. "
-                    "Our three seeds per network add information the original "
-                    "evidence does not contain — and that spread is what decides "
+                    "Our three seeds per network add the spread that decides "
                     "whether a difference between two networks is real.",
             col_w=[3, 5])
 
@@ -437,36 +418,16 @@ def main() -> None:
 
     d.table("THE RECIPE (PAPER SEC. 4.2 + TOPIC CARD)", "What we ran",
             ["Setting", "Value"],
-            [["Data split", "45,000 train / 5,000 validation / 10,000 test"],
+            [["Data", "45,000 train / 5,000 validation / 10,000 test"],
              ["Optimiser", "SGD, momentum 0.9, weight decay 1e-4, batch 128"],
-             ["Learning rate", "0.1, ÷10 at 32,000 and 48,000, stop at 64,000"],
-             ["Initialisation", "He (MSRA) fan-in, batch norm, no dropout"],
-             ["Augmentation", "Pad-4 random crop, horizontal flip, per-pixel mean"],
-             ["Epoch", "351 iterations = 45,000/128, last partial batch dropped"],
-             ["Precision", "float16 autocast + grad scaling; evaluation in float32"]],
-            col_w=[2.2, 6], size=15)
-
-    d.table("WHAT THE PAPER DOES NOT SAY", "The choices we had to make ourselves",
-            ["Open choice", "Our decision"],
-            [["Which 5,000 images validate", "Last 5,000 of the concatenated batches"],
-             ["45,000 or 50,000 trained images", "45,000 (the card says the paper "
-              "likely used all 50,000)"],
-             ["Runs per network", "Three"],
-             ["How Figure 6 training error is measured",
-              "Both eval-mode (45k) and running (augmented batches)"],
-             ["Epoch versus schedule", "Everything counted in iterations"]],
-            caption="Every one of these is reported, so a reader can disagree "
-                    "with a specific choice rather than with the whole result.",
-            col_w=[3, 5])
-
-    d.bullets("ARCHITECTURE", "The two families are deliberately identical", [
-        ("6n + 2 weighted layers; 16/32/64 channels; global average pool; one FC",
-         None),
-        ("20 layers: 269,722 parameters — 56 layers: 853,018", None),
-        ("Plain and residual have exactly the same depth, width and parameter "
-         "count", "That is the point of identity shortcuts with zero-padding "
-         "(the paper's option A): the comparison isolates the parameterisation"),
-    ])
+             ["Learning rate", "0.1, divided by 10 at 32,000 and 48,000, stop at 64,000"],
+             ["Architecture", "6n+2 layers; 16/32/64 channels; He init; no dropout"],
+             ["Precision", "float16 autocast; all reported errors in float32"]],
+            caption="The paper leaves five choices open: which 5,000 images "
+                    "validate, 45k or 50k trained, runs per network, how the "
+                    "Figure 6 training error is measured, and epochs versus "
+                    "iterations. We fixed each one and report it.",
+            col_w=[2, 6], size=16)
 
     d.hero("MILESTONE 2 — PIPELINE CHECK",
            "One run, the paper's full recipe",
@@ -475,173 +436,111 @@ def main() -> None:
            f"{r20['elapsed_s'] / 60:.1f} minutes",
            [("Paper, Table 6", "8.75%"),
             ("Difference", f"{r20['final']['test_err'] - 8.75:+.2f} pp".replace("-", "−")),
-            ("Runs in total", "23")],
-           note="The pipeline was not changed afterwards, so this is also the "
-                "first ResNet-20 seed in the replication.")
+            ("Runs in total", "29")],
+           note="Same depth, width and 853,018 parameters as the plain net — "
+                "the only difference is the shortcut.")
 
     # ---------------------------------------------------------- part 3
     d.section("3", "What we found", "The replication, then the controlled "
               "experiment that tests the most obvious objection.",
               "Liu Chuanliang")
 
-    d.figure("REPLICATION — FIGURE 6 LEFT", "Plain networks: deeper is worse, "
+    d.figure("REPLICATION — FIGURE 6", "Plain networks: deeper is worse, "
              "in all three panels", "figures/fig6_plain.png",
              caption="Thin lines are individual seeds, the bold line is the "
-                     "mean. The 56-layer curve sits above the 20-layer one for "
-                     "running training error, evaluation-mode training error and "
-                     "test error alike.",
+                     "mean; dotted lines are our Figure 6 read-offs.",
              note="Both training panels are higher too — this is not overfitting.")
 
-    d.figure("REPLICATION — FIGURE 6 MIDDLE", "Residual networks: the ordering "
+    d.figure("REPLICATION — FIGURE 6", "Residual networks: the ordering "
              "reverses", "figures/fig6_resnet.png",
              caption="Same layout, same recipe, identity shortcuts added. The "
-                     "curves nearly coincide and the deeper network ends below "
-                     "the shallower one.",
-             note="Same depth, same width, same 853,018 parameters.")
+                     "curves nearly coincide and the deeper network ends below.",
+             note="At depth 56 the residual net is 7.07 pp better; at depth 20, "
+                  "1.19 pp — the gain grows with depth.")
 
-    d.table("REPLICATION — TABLE 6", "Our numbers against the paper's",
-            ["Network", "Ours (mean of 3)", "Paper", "Difference"],
-            [["plain-20", "9.87%", "9.7%", "+0.17"],
-             ["plain-56", "14.43%", "13.3%", "+1.13"],
-             ["ResNet-20", "8.68%", "8.75%", "−0.07"],
-             ["ResNet-56", "7.36%", "6.97%", "+0.39"]],
-            caption="Three of the four land within 0.4 pp of a single-run "
-                    "published value. plain-56 is the exception and we return "
-                    "to it.",
-            col_w=[2, 2, 1.6, 1.6], size=17)
-
-    d.table("THE STATISTICAL TEST THE CARD ASKS FOR",
-            "Is the degradation bigger than the seed spread?",
-            ["Comparison", "Difference", "Larger spread", "Verdict"],
-            [["plain-56 − plain-20, training error (eval)", "+2.04 pp", "0.70",
-              "real"],
-             ["plain-56 − plain-20, training error (running)", "+3.10 pp", "0.71",
-              "real"],
-             ["ResNet-20 − ResNet-56, test error", "+1.31 pp", "0.34",
-              "real (paper: 1.78)"]],
+    d.table("REPLICATION — TABLE 6 AND THE SEED TEST", "Our numbers, and "
+            "whether the differences are real",
+            ["Comparison", "Ours", "Paper", "Spread", "Verdict"],
+            [["plain-20, test", "9.87%", "9.7%", "0.60", ""],
+             ["plain-56, test", "14.43%", "13.3%", "0.23", ""],
+             ["ResNet-20, test", "8.68%", "8.75%", "0.34", ""],
+             ["ResNet-56, test", "7.36%", "6.97%", "0.30", ""],
+             ["plain-56 minus plain-20, training", "+2.04 pp", "—", "0.70", "real"],
+             ["ResNet-20 minus ResNet-56, test", "+1.31 pp", "1.78", "0.34", "real"]],
             caption="A difference counts as real only if it exceeds the larger "
-                    "of the two networks' spreads. All three do.",
-            col_w=[4.4, 1.8, 1.8, 2], size=15)
+                    "of the two networks' spreads. The degradation survives that "
+                    "test, and so does the reversal.",
+            col_w=[3.4, 1.6, 1.1, 1.1, 1.1], size=13)
 
-    d.bullets("EXPERIMENT 1 — THE OBJECTION", "The obvious objection", [
-        ("The paper gives 20 and 56 layers the same learning-rate schedule, and "
-         "only the 110-layer net gets a warm-up", None),
-        ("Maybe 56 layers simply needs a smaller step size", None),
-        ("If so, the degradation is a tuning artefact, not a property of depth",
-         "This is exactly what our extension tests"),
-    ])
-
-    d.bullets("EXPERIMENT 1 — PRE-REGISTERED", "What we predicted before running "
-              "anything", [
+    d.bullets("EXPERIMENT 1 — THE QUESTION", "The obvious objection, and what "
+              "we predicted", [
+        ("The paper gives 20 and 56 layers the same learning-rate schedule",
+         "Maybe 56 layers simply needs a smaller step size"),
         ("H1:  the rate selected for plain-56 is lower than for plain-20", None),
         ("H2:  the degradation remains after each depth is tuned", None),
-        ("Only one factor varies: the initial rate, over 0.01 / 0.03 / 0.1 / "
-         "0.3 / 0.5", "Divisions by 10, the 64k schedule, no warm-up, the split "
-         "and the augmentation all stay fixed"),
-        ("Selection rule, fixed in advance: lowest evaluation-mode training "
-         "error at the last iteration", None),
-    ])
+        ("Only the initial rate varies: 0.01 / 0.03 / 0.1 / 0.3 / 0.5",
+         "Divisions by 10, the 64k schedule, the split and the augmentation stay fixed"),
+    ], size=21)
 
     d.figure("EXPERIMENT 1 — THE GRID", "Selection and the failure region",
              "figures/extension_a_lr.png",
              caption="Final error against the initial learning rate, log scale. "
-                     "plain-20 selects 0.1; plain-56 selects 0.03, 3.3 times "
+                     "plain-20 selects 0.1, plain-56 selects 0.03 — 3.3 times "
                      "lower. Crosses are runs that diverged.",
-             note="The divergence is the sharper evidence: at 0.3 and 0.5 the "
-                  "20-layer network trains and the 56-layer one does not.")
+             note="At 0.3 and 0.5 the 20-layer network trains and the 56-layer "
+                  "one does not. Both rates are above the paper's own 0.1.")
 
-    d.table("EXPERIMENT 1 — DIVERGENCE", "The deep network cannot use the "
-            "shallow one's rates",
-            ["Depth", "lr 0.3", "lr 0.5"],
-            [["plain-20", "trains (8.82% test)", "trains (9.59% test)"],
-             ["plain-56", "diverged at iteration 23", "diverged at iteration 14"]],
-            caption="Both plain-56 runs were repeated on their own afterwards "
-                    "and died at exactly the same iterations, so this is "
-                    "reproducible numerics and not an artefact of running "
-                    "several jobs at once.",
-            col_w=[1.6, 4, 4], size=17)
-
-    d.table("EXPERIMENT 1 — THREE SEEDS",
-            "The degradation survives tuning",
-            ["Network (rate)", "Training 45k", "Test 10k", "Spread (test)"],
-            [["plain-20 (0.1)", "0.43%", "9.87%", "0.60"],
-             ["plain-56 (0.03)", "1.70%", "14.18%", "2.44"],
-             ["Difference", "+1.27 pp", "+4.31 pp", "—"]],
-            caption="The tuned training gap is 1.27 pp against a 0.52 spread, "
-                    "so real. Tuning takes the gap from 2.04 to 1.27 — it buys "
-                    "back about a third of it. Note the spreads: 2.44 against "
-                    "0.60.",
-            col_w=[2.6, 2, 2, 2], size=17, hi=3)
+    d.table("EXPERIMENT 1 — THE ANSWER", "Tuning buys back a third, not the gap",
+            ["", "plain-20 (0.1)", "plain-56 (0.03)"],
+            [["Training error", "0.43%", "1.70%"],
+             ["Test error", "9.87%", "14.18%"],
+             ["Spread, test", "0.60", "2.44"],
+             ["Training gap", "+1.27 pp against a 0.52 spread", "real"]],
+            caption="At the shared rate of 0.1 the training gap was 2.04 pp; "
+                    "after tuning it is 1.27 pp. H1 and H2 both hold, and tuning "
+                    "accounts for about a third of the difference.",
+            col_w=[2.2, 3.2, 3.2], size=15)
 
     # ---------------------------------------------------------- part 4
-    d.section("4", "Why, and how far it goes", "The mechanism evidence, and an "
-              "honest account of what our experiments cannot settle.",
+    d.section("4", "Why, and how far it goes", "The mechanism evidence, a "
+              "second experiment, and an honest account of the limits.",
               "Liu Yilin")
 
-    d.figure("MECHANISM — PAPER FIGURE 7",
-             "Layer responses shrink with depth in the plain networks",
-             "figures/fig7.png",
+    d.figure("MECHANISM — PAPER FIGURE 7", "Responses shrink with depth; "
+             "gradients do not vanish", "figures/fig7.png",
              caption="Standard deviation of each layer's output after batch "
-                     "normalisation. Sorted by magnitude (right), plain-56 sits "
-                     "systematically below plain-20 — the ordering the paper "
-                     "reports.",
-             note="Partial match: the paper's flattening in residual nets did "
-                  "not reproduce in our runs.")
+                     "normalisation. Sorted by magnitude, plain-56 sits below "
+                     "plain-20 — the ordering the paper reports.",
+             note="Gradients: the smallest norm is 0.12 for plain-56 and 0.24 "
+                  "for plain-20. Smaller, but not vanishing.")
 
-    d.bullets("MECHANISM — PAPER SEC. 4.1", "The gradients do not vanish", [
-        ("Smallest per-layer gradient norm: 0.12 for plain-56, 0.24 for plain-20",
-         None),
-        ("Smaller, but not zero and not exponentially suppressed", None),
-        ("So the degradation is not a vanishing-gradient story in our models "
-         "either", "This is the paper's own argument, and it survives in our "
-         "reproduction"),
-    ])
-
-    d.bullets("EXPERIMENT 2 — TRAINING SET", "The one number that did not line up — and why", [
-        ("plain-56 came out at 14.43% where the paper reports 13.3%", None),
-        ("Not seed noise: the spread at that depth is only 0.23 pp", None),
+    d.bullets("EXPERIMENT 2 — TRAINING SET", "The one number that did not line "
+              "up, and why", [
+        ("plain-56 came out at 14.43% where the paper reports 13.3%, and the "
+         "spread is only 0.23 pp — not seed noise", None),
         ("The protocol fixes 45,000 images; the paper may have used all 50,000",
          "So we ran it rather than leaving it as a conjecture"),
         ("On 50,000 images plain-56 reaches 13.06%, just below the paper's 13.3%",
-         "The gap was our training set, not our implementation"),
+         "Training error rose from 2.47% to 4.77%: more data made it fit worse and generalise better"),
         ("And the degradation survives: 13.06 against plain-20's 9.44", None),
-    ])
-
-    d.bullets("OUR OWN FINDING", "Reproducibility is part of the result", [
-        ("At their selected rates, the seed spread on test error is 2.44 pp for "
-         "plain-56 and 0.60 pp for plain-20", None),
-        ("The deeper plain network is not only worse on average — it is much "
-         "less stable run to run", None),
-        ("The paper's Table 6 entries are single runs and report no such "
-         "uncertainty", "A single-run comparison at this depth carries an "
-         "error bar the reader cannot see"),
-    ])
+    ], size=20)
 
     d.twocol("CONCLUSION", "What we show, and what we do not",
              "Shown", [
                  "Degradation reproduces: +2.04 pp training error, beyond a "
                  "0.70 spread",
-                 "Identity shortcuts reverse the ordering at depth 56 (7.07 pp)",
-                 "Tuning each depth reduces the gap by a third but does not "
-                 "remove it",
-                 "Gradients do not vanish; responses shrink with depth",
-                 "The 1.13-point plain-56 gap was the training set: 13.06% on 50k",
+                 "Identity shortcuts reverse the ordering (7.07 pp at depth 56)",
+                 "Tuning buys back a third, and the deep net dies at 0.3",
+                 "The 1.13-point gap was the training set, not the code",
              ],
              "Not shown", [
-                 "Why residual connections help — our diagnostics are "
-                 "consistent with the paper, not causal",
-                 "That the paper's recipe gives 13.3% at depth 56",
-                 "Anything about rates between our grid points",
-                 "Longer schedules, other datasets, other shortcut options",
+                 "Why residual connections help — consistent, not causal",
+                 "Whether the paper really used 50,000 images",
+                 "Anything between or beyond our five grid points",
+                 "Longer schedules, other datasets, options B and C",
              ],
-             foot="Tuning explains a third of the gap; the other two thirds "
-                  "need a different explanation.")
-
-    d.quote("TAKEAWAY", "One sentence",
-            "A deeper plain network is not mis-tuned — it is harder to optimise, "
-            "and a step size only pays for part of the difference.",
-            "Reproduction: heuristic ordering exact, worst plain value "
-            "approximate. Extension: H1 and H2 both hold.")
+             foot="Tuning explains a third of the gap; the training set explains "
+                  "the replication; the rest needs another explanation.")
 
     # --------------------------------------------------------- backups
     d.section("B", "Backup slides", "For questions — not part of the main talk.",
@@ -673,48 +572,24 @@ def main() -> None:
              ["56", "0.5", "—", "—", "—", "diverged, iter 14"]],
             col_w=[0.9, 0.9, 1.4, 1.4, 1.4, 2.6], size=12)
 
-    d.bullets("BACKUP — THE RULES WE FOLLOWED", "Why the seed counts are what "
-              "they are", [
-        ("plain-20 selects 0.1, so its replication seeds count as the three "
-         "seeds (the card allows this)", None),
-        ("plain-56 selects 0.03, and a tuning run may not be one of the three "
-         "seeds", "So seed 0 is the tuning run, reported separately, and seeds "
-         "1, 2, 3 are the three"),
-        ("A seed changes the initialisation and the data shuffling; the 45k/5k "
-         "split never changes", None),
-        ("A run that diverges is recorded and not replaced", None),
-    ])
-
     d.table("BACKUP — THE 50,000-IMAGE CHECK", "Where the 1.13 points came from",
             ["Network", "Images", "Train", "Test", "Paper"],
             [["plain-20", "45,000", "0.43", "9.87", "9.7"],
              ["plain-20", "50,000", "0.61", "9.44", "9.7"],
              ["plain-56", "45,000", "2.47", "14.43", "13.3"],
              ["plain-56", "50,000", "4.77", "13.06", "13.3"]],
-            caption="Three seeds each, everything else unchanged, no validation "
-                    "set in the 50k variant. Training error rises while test "
-                    "error falls — more data makes the deep plain network fit "
-                    "worse and generalise better.",
-            col_w=[1.8, 1.6, 1.4, 1.4, 1.4], size=15, hi=4)
+            caption="Three seeds each, everything else unchanged; no validation "
+                    "set in the 50k variant.",
+            col_w=[1.8, 1.6, 1.4, 1.4, 1.4], size=15)
 
     d.table("BACKUP — COMPUTE AND ARTEFACTS", "What it cost and where it is",
             ["Item", "Value"],
-            [["Total runs", "23 (12 replication + 11 extension)"],
-             ["Total GPU time", "19.1 hours on one RTX 4060 Laptop"],
-             ["One run alone", "≈15 min (20 layers), ≈48 min (56 layers)"],
-             ["Repository", "code, all 23 runs with weights, every figure script"]],
+            [["Total runs", "29 (12 replication + 11 tuning + 6 on 50k images)"],
+             ["Total GPU time", "22 hours on one RTX 4060 Laptop"],
+             ["Repository", "code, all runs with weights, every figure script"]],
             caption="A reader can regenerate every table and figure from the "
                     "committed run outputs without retraining.",
             col_w=[2.4, 6], size=16)
-
-    d.bullets("BACKUP — IF WE DID IT AGAIN", "What we would change", [
-        ("Train on all 50,000 images to test the explanation for the 1.13 pp "
-         "gap directly", None),
-        ("Use more than one seed per tuning point, since the spread at depth 56 "
-         "is larger than the differences we see between rates", None),
-        ("Measure the gradient autocorrelation, which is the textbook's "
-         "diagnostic and which we did not test", None),
-    ])
 
     d.save(args.out)
 
