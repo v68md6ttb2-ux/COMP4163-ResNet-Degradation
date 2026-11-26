@@ -538,7 +538,7 @@ def main() -> None:
          "reproduction"),
     ])
 
-    d.bullets("DISCUSSION", "The one number that did not line up — and why", [
+    d.bullets("FOLLOW-UP EXPERIMENT — TRAINING SET", "The one number that did not line up — and why", [
         ("plain-56 came out at 14.43% where the paper reports 13.3%", None),
         ("Not seed noise: the spread at that depth is only 0.23 pp", None),
         ("The protocol fixes 45,000 images; the paper may have used all 50,000",
