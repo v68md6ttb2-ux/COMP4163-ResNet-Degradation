@@ -35,12 +35,16 @@ BODY_W = W - 2 * MARGIN
 
 TEAM = "Group 11  ·  COMP4163 Course Project"
 
+TITLE_OF = {"1": "The puzzle", "2": "Our pipeline", "3": "What we found",
+            "4": "Why, and how far it goes"}
+
 
 class Deck:
     def __init__(self) -> None:
         self.prs = Presentation()
         self.prs.slide_width, self.prs.slide_height = W, H
         self.n = 0
+        self.part = ""
 
     # ------------------------------------------------------------ helpers
     def _blank(self):
@@ -77,8 +81,9 @@ class Deck:
         bar.shadow.inherit = False
 
     def _footer(self, slide):
-        self._text(slide, MARGIN, H - Inches(0.52), Inches(8), Inches(0.3),
-                   TEAM, 10, MUTED)
+        left = TEAM + (f"  ·  {self.part}" if self.part else "")
+        self._text(slide, MARGIN, H - Inches(0.52), Inches(9), Inches(0.3),
+                   left, 10, MUTED)
         self._text(slide, W - MARGIN - Inches(1.2), H - Inches(0.52),
                    Inches(1.2), Inches(0.3), str(self.n), 10, MUTED,
                    align=PP_ALIGN.RIGHT)
@@ -111,21 +116,65 @@ class Deck:
                    "Recognition, CVPR 2016", 12, MUTED, italic=True)
         return s
 
+    def agenda(self, rows):
+        """Roadmap slide: what the four parts are, who gives each, how long."""
+        s = self._blank()
+        self.part = ""
+        self._text(s, MARGIN, Inches(0.55), BODY_W, Inches(0.3),
+                   "AGENDA", 11.5, MUTED, bold=True)
+        self._text(s, MARGIN, Inches(0.85), BODY_W, Inches(0.8),
+                   "What we will cover", 30, INK, bold=True)
+        self._rule(s, Inches(1.72))
+        top = Inches(2.15)
+        for i, (num, title, who, mins) in enumerate(rows):
+            y = int(top + i * Inches(1.05))
+            bar = s.shapes.add_shape(1, MARGIN, y + Inches(0.12),
+                                     Inches(0.05), Inches(0.55))
+            bar.fill.solid()
+            bar.fill.fore_color.rgb = BLUE if i < 4 else RULE
+            bar.line.fill.background()
+            bar.shadow.inherit = False
+            self._text(s, MARGIN + Inches(0.28), y, Inches(0.6), Inches(0.5),
+                       num, 17, BLUE, bold=True)
+            self._text(s, MARGIN + Inches(0.9), y + Inches(0.02), Inches(6.4),
+                       Inches(0.5), title, 19, INK)
+            self._text(s, MARGIN + Inches(7.4), y + Inches(0.05), Inches(2.6),
+                       Inches(0.4), who, 15, MUTED)
+            self._text(s, W - MARGIN - Inches(0.9), y + Inches(0.05),
+                       Inches(0.9), Inches(0.4), mins, 15, MUTED,
+                       align=PP_ALIGN.RIGHT)
+        self._footer(s)
+        return s
+
     def section(self, number, title, subtitle, who):
         s = self._blank()
+        self.part = TITLE_OF.get(str(number), "")
         panel = s.shapes.add_shape(1, 0, 0, Inches(0.22), H)
         panel.fill.solid()
         panel.fill.fore_color.rgb = BLUE
         panel.line.fill.background()
         panel.shadow.inherit = False
-        self._text(s, MARGIN + Inches(0.2), Inches(2.5), BODY_W, Inches(0.4),
-                   f"PART {number}", 13, BLUE, bold=True)
-        self._text(s, MARGIN + Inches(0.2), Inches(2.95), BODY_W, Inches(1.0),
+
+        # Progress: one marker per part, filled up to the current one.
+        if str(number).isdigit():
+            for i in range(4):
+                x = int(MARGIN + Inches(0.2) + i * Inches(0.5))
+                m = s.shapes.add_shape(1, x, Inches(2.38), Inches(0.34),
+                                       Inches(0.09))
+                m.fill.solid()
+                m.fill.fore_color.rgb = BLUE if i < int(number) else RULE
+                m.line.fill.background()
+                m.shadow.inherit = False
+
+        label = f"PART {number} OF 4" if str(number).isdigit() else "APPENDIX"
+        self._text(s, MARGIN + Inches(0.2), Inches(2.62), BODY_W, Inches(0.35),
+                   label, 12, BLUE, bold=True)
+        self._text(s, MARGIN + Inches(0.2), Inches(3.0), BODY_W, Inches(1.0),
                    title, 40, INK, bold=True)
-        self._text(s, MARGIN + Inches(0.2), Inches(4.0), BODY_W, Inches(0.8),
+        self._text(s, MARGIN + Inches(0.2), Inches(4.05), BODY_W, Inches(0.8),
                    subtitle, 18, MUTED, spacing=1.2)
-        self._text(s, MARGIN + Inches(0.2), Inches(5.35), BODY_W, Inches(0.4),
-                   who, 13, MUTED)
+        self._text(s, MARGIN + Inches(0.2), Inches(5.4), BODY_W, Inches(0.4),
+                   f"Presented by {who}" if who else "", 13, MUTED)
         self._footer(s)
         return s
 
@@ -316,6 +365,16 @@ def main() -> None:
 
     d = Deck()
     d.title()
+    d.agenda([
+        ("1", "The puzzle: why a deeper network should never be worse",
+         "Chen Letian", "4 min"),
+        ("2", "Our pipeline, and the check that it matches the paper",
+         "Zhang Yiyang", "4 min"),
+        ("3", "The replication, and experiment 1: is it just mis-tuning?",
+         "Liu Chuanliang", "6 min"),
+        ("4", "Why it happens, experiment 2, and what we cannot claim",
+         "Liu Yilin", "5 min"),
+    ])
 
     # ---------------------------------------------------------- part 1
     d.section("1", "The puzzle", "A deeper network should never be worse than "
@@ -464,7 +523,7 @@ def main() -> None:
                     "of the two networks' spreads. All three do.",
             col_w=[4.4, 1.8, 1.8, 2], size=15)
 
-    d.bullets("THE OBJECTION", "The obvious objection", [
+    d.bullets("EXPERIMENT 1 — THE OBJECTION", "The obvious objection", [
         ("The paper gives 20 and 56 layers the same learning-rate schedule, and "
          "only the 110-layer net gets a warm-up", None),
         ("Maybe 56 layers simply needs a smaller step size", None),
@@ -472,7 +531,7 @@ def main() -> None:
          "This is exactly what our extension tests"),
     ])
 
-    d.bullets("EXTENSION — PRE-REGISTERED", "What we predicted before running "
+    d.bullets("EXPERIMENT 1 — PRE-REGISTERED", "What we predicted before running "
               "anything", [
         ("H1:  the rate selected for plain-56 is lower than for plain-20", None),
         ("H2:  the degradation remains after each depth is tuned", None),
@@ -483,7 +542,7 @@ def main() -> None:
          "error at the last iteration", None),
     ])
 
-    d.figure("EXTENSION — THE GRID", "Selection and the failure region",
+    d.figure("EXPERIMENT 1 — THE GRID", "Selection and the failure region",
              "figures/extension_a_lr.png",
              caption="Final error against the initial learning rate, log scale. "
                      "plain-20 selects 0.1; plain-56 selects 0.03, 3.3 times "
@@ -491,7 +550,7 @@ def main() -> None:
              note="The divergence is the sharper evidence: at 0.3 and 0.5 the "
                   "20-layer network trains and the 56-layer one does not.")
 
-    d.table("EXTENSION — DIVERGENCE", "The deep network cannot use the "
+    d.table("EXPERIMENT 1 — DIVERGENCE", "The deep network cannot use the "
             "shallow one's rates",
             ["Depth", "lr 0.3", "lr 0.5"],
             [["plain-20", "trains (8.82% test)", "trains (9.59% test)"],
@@ -502,7 +561,7 @@ def main() -> None:
                     "several jobs at once.",
             col_w=[1.6, 4, 4], size=17)
 
-    d.table("EXTENSION — THREE SEEDS AT THE SELECTED RATES",
+    d.table("EXPERIMENT 1 — THREE SEEDS",
             "The degradation survives tuning",
             ["Network (rate)", "Training 45k", "Test 10k", "Spread (test)"],
             [["plain-20 (0.1)", "0.43%", "9.87%", "0.60"],
@@ -538,7 +597,7 @@ def main() -> None:
          "reproduction"),
     ])
 
-    d.bullets("FOLLOW-UP EXPERIMENT — TRAINING SET", "The one number that did not line up — and why", [
+    d.bullets("EXPERIMENT 2 — TRAINING SET", "The one number that did not line up — and why", [
         ("plain-56 came out at 14.43% where the paper reports 13.3%", None),
         ("Not seed noise: the spread at that depth is only 0.23 pp", None),
         ("The protocol fixes 45,000 images; the paper may have used all 50,000",
